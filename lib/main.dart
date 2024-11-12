@@ -165,7 +165,7 @@ class _FinalStageState extends State<FinalStage> {
 
   Widget _buildMatchWidget(dynamic match) {
     const boxWidth = 400.0;
-    const boxHeight = 100.0;
+    const boxHeight = 120.0; // Increased height to accommodate the score
 
     int? player1Id = match['match']['player1_id'];
     int? player2Id = match['match']['player2_id'];
@@ -190,6 +190,11 @@ class _FinalStageState extends State<FinalStage> {
           .format(localTime); // Format as "Wed, Nov 12 – 12:00 PM"
     }
 
+    // Fetch and display scores
+    String? scores = match['match']['scores_csv'];
+    String displayScore =
+        scores != null && scores.isNotEmpty ? scores : 'Score TBD';
+
     return SizedBox(
       width: boxWidth,
       height: boxHeight,
@@ -208,6 +213,10 @@ class _FinalStageState extends State<FinalStage> {
                   style: const TextStyle(
                       fontSize: 12,
                       color: Colors.blueGrey)), // Display the scheduled time
+              const SizedBox(height: 4),
+              Text(displayScore,
+                  style: const TextStyle(
+                      fontSize: 14, color: Colors.orange)), // Display the score
             ],
           ),
         ),
