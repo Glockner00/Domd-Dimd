@@ -1,6 +1,7 @@
 // main.dart
 import 'package:flutter/material.dart';
 import 'challonge_service.dart';
+import 'package:intl/intl.dart';
 
 const tournamentID = 'api_test1337';
 
@@ -163,7 +164,7 @@ class _FinalStageState extends State<FinalStage> {
   }
 
   Widget _buildMatchWidget(dynamic match) {
-    const boxWidth = 600.0;
+    const boxWidth = 400.0;
     const boxHeight = 100.0;
 
     int? player1Id = match['match']['player1_id'];
@@ -179,19 +180,34 @@ class _FinalStageState extends State<FinalStage> {
         ? 'Winner: ${_participantNames[match['match']['winner_id']]}'
         : 'Winner TBD';
 
+    // Fetch and format the match's scheduled time
+    String? scheduledTime = match['match']['scheduled_time'];
+    String displayTime = 'Time TBD';
+    if (scheduledTime != null && scheduledTime.isNotEmpty) {
+      DateTime utcTime = DateTime.parse(scheduledTime); // Parse the UTC time
+      DateTime localTime = utcTime.toLocal(); // Convert to local time
+      displayTime = DateFormat('EEE, MMM d – h:mm a')
+          .format(localTime); // Format as "Wed, Nov 12 – 12:00 PM"
+    }
+
     return SizedBox(
       width: boxWidth,
       height: boxHeight,
       child: Card(
-        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 14),
+        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
         child: Padding(
-          padding: const EdgeInsets.all(10.0),
+          padding: const EdgeInsets.all(8.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text('$team1 vs $team2', style: const TextStyle(fontSize: 16)),
               Text(winner,
                   style: const TextStyle(fontSize: 14, color: Colors.green)),
+              const SizedBox(height: 4),
+              Text(displayTime,
+                  style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.blueGrey)), // Display the scheduled time
             ],
           ),
         ),
