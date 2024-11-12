@@ -82,7 +82,12 @@ class _FinalStageState extends State<FinalStage> {
     _loadBracket();
   }
 
+  // Function to load bracket data
   Future<void> _loadBracket() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = '';
+    });
     try {
       // Fetch participant names
       final participantNames =
@@ -95,11 +100,13 @@ class _FinalStageState extends State<FinalStage> {
       setState(() {
         _participantNames = participantNames;
         _rounds = rounds;
-        _isLoading = false;
       });
     } catch (e) {
       setState(() {
         _errorMessage = 'Error: $e';
+      });
+    } finally {
+      setState(() {
         _isLoading = false;
       });
     }
@@ -110,42 +117,55 @@ class _FinalStageState extends State<FinalStage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Tournament Bracket'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _loadBracket, // Call the refresh function
+            tooltip: 'Refresh Bracket',
+          ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _errorMessage.isNotEmpty
               ? Center(child: Text(_errorMessage))
-              : _buildBracket(),
+              : _buildScrollableBracket(),
     );
   }
 
-  Widget _buildBracket() {
+  Widget _buildScrollableBracket() {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: _rounds.entries.map((entry) {
-          int roundNumber = entry.key;
-          List<dynamic> matches = entry.value;
+      child: SingleChildScrollView(
+        scrollDirection: Axis.vertical,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: _rounds.entries.map((entry) {
+            int roundNumber = entry.key;
+            List<dynamic> matches = entry.value;
 
-          return Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                child: Text('Round $roundNumber',
-                    style: const TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.bold)),
-              ),
-              ...matches.map((match) => _buildMatchWidget(match)).toList(),
-            ],
-          );
-        }).toList(),
+            return Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  child: Text('Round $roundNumber',
+                      style: const TextStyle(
+                          fontSize: 18, fontWeight: FontWeight.bold)),
+                ),
+                ...matches.map((match) => _buildMatchWidget(match)).toList(),
+              ],
+            );
+          }).toList(),
+        ),
       ),
     );
   }
 
   Widget _buildMatchWidget(dynamic match) {
+    const boxWidth = 600.0;
+    const boxHeight = 100.0;
+
     int? player1Id = match['match']['player1_id'];
     int? player2Id = match['match']['player2_id'];
     String team1 = player1Id != null && _participantNames.containsKey(player1Id)
@@ -159,16 +179,21 @@ class _FinalStageState extends State<FinalStage> {
         ? 'Winner: ${_participantNames[match['match']['winner_id']]}'
         : 'Winner TBD';
 
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Column(
-          children: [
-            Text('$team1 vs $team2', style: const TextStyle(fontSize: 16)),
-            Text(winner,
-                style: const TextStyle(fontSize: 14, color: Colors.green)),
-          ],
+    return SizedBox(
+      width: boxWidth,
+      height: boxHeight,
+      child: Card(
+        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 14),
+        child: Padding(
+          padding: const EdgeInsets.all(10.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text('$team1 vs $team2', style: const TextStyle(fontSize: 16)),
+              Text(winner,
+                  style: const TextStyle(fontSize: 14, color: Colors.green)),
+            ],
+          ),
         ),
       ),
     );
