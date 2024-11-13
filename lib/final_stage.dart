@@ -3,8 +3,7 @@ import 'package:challonge_basic/search_matches.dart';
 import 'package:flutter/material.dart';
 import 'challonge_service.dart';
 import 'package:intl/intl.dart';
-
-const String tournamentID = "testDomd";
+import 'package:challonge_basic/config.dart';
 
 class FinalStage extends StatefulWidget {
   final int initialRound;

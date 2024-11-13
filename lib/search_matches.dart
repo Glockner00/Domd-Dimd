@@ -4,8 +4,7 @@ import 'package:flutter/services.dart';
 import 'challonge_service.dart';
 import 'final_stage.dart';
 import 'package:intl/intl.dart';
-
-const String tournamentID = "testDomd";
+import 'package:challonge_basic/config.dart';
 
 class SearchMatchesPage extends StatefulWidget {
   const SearchMatchesPage({super.key});
