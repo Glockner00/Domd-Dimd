@@ -28,13 +28,15 @@ class _FinalStageState extends State<FinalStage> {
   bool _isLoading = true;
   String _errorMessage = '';
   late PageController _pageController;
+  late ScrollController _scrollController;
   int _currentPage = 0;
 
   @override
   void initState() {
     super.initState();
-    _currentPage = widget.initialRound - 1;
+    _currentPage = widget.initialRound - 1; // Adjust for zero-based index
     _pageController = PageController(initialPage: _currentPage);
+    _scrollController = ScrollController();
     _loadBracket();
   }
 
@@ -75,7 +77,26 @@ class _FinalStageState extends State<FinalStage> {
       setState(() {
         _isLoading = false;
       });
-      _pageController = PageController(initialPage: _currentPage);
+      WidgetsBinding.instance
+          .addPostFrameCallback((_) => _scrollToHighlightedMatch());
+    }
+  }
+
+  void _scrollToHighlightedMatch() {
+    if (_currentPage == widget.initialRound - 1 &&
+        widget.highlightMatchId != -1) {
+      // Find the index of the highlighted match
+      int? matchIndex = _rounds[_currentPage + 1]?.indexWhere(
+          (match) => match['match']['id'] == widget.highlightMatchId);
+      if (matchIndex != null && matchIndex >= 0) {
+        // Scroll to the highlighted match with a small offset
+        _scrollController.animateTo(
+          matchIndex *
+              100.0, // Assuming each match item height is approximately 100. Adjust if needed
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      }
     }
   }
 
@@ -111,6 +132,7 @@ class _FinalStageState extends State<FinalStage> {
         setState(() {
           _currentPage = index; // Track the current page
         });
+        _scrollToHighlightedMatch(); // Trigger scroll to highlighted match on page change
       },
       itemCount: _rounds.keys.length,
       itemBuilder: (context, index) {
@@ -130,10 +152,12 @@ class _FinalStageState extends State<FinalStage> {
               ),
               const SizedBox(height: 16),
               Expanded(
-                child: ListView(
-                  children: matches
-                      .map((match) => _buildMatchWidget(match, roundNumber))
-                      .toList(),
+                child: ListView.builder(
+                  controller: _scrollController,
+                  itemCount: matches.length,
+                  itemBuilder: (context, matchIndex) {
+                    return _buildMatchWidget(matches[matchIndex], roundNumber);
+                  },
                 ),
               ),
             ],
