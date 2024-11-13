@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'challonge_service.dart';
 import 'package:intl/intl.dart';
 
-const tournamentID = 'api_test1337';
+const tournamentID = 'testDomd';
 
 void main() {
   runApp(const MyApp());
@@ -74,43 +74,67 @@ class _FinalStageState extends State<FinalStage> {
   final ChallongeService _challongeService = ChallongeService();
   Map<int, List<dynamic>> _rounds = {};
   Map<int, String> _participantNames = {};
+  Map<int, String> _roundTimes = {};
   bool _isLoading = true;
   String _errorMessage = '';
+  late PageController _pageController;
+  int _currentPage = 0;
 
   @override
   void initState() {
     super.initState();
+    _pageController = PageController(initialPage: _currentPage);
     _loadBracket();
   }
 
-  // Function to load bracket data
   Future<void> _loadBracket() async {
     setState(() {
       _isLoading = true;
       _errorMessage = '';
     });
     try {
-      // Fetch participant names
       final participantNames =
           await _challongeService.fetchParticipantNames("$tournamentID");
-
-      // Fetch matches grouped by rounds
       final rounds =
           await _challongeService.fetchMatchesGroupedByRounds("$tournamentID");
+
+      Map<int, String> roundTimes = {};
+      rounds.forEach((roundNumber, matches) {
+        if (matches.isNotEmpty) {
+          String? scheduledTime = matches[0]['match']['scheduled_time'];
+          if (scheduledTime != null) {
+            DateTime utcTime = DateTime.parse(scheduledTime);
+            DateTime localTime = utcTime.toLocal();
+            roundTimes[roundNumber] =
+                DateFormat('EEE, MMM d – h:mm a').format(localTime);
+          }
+        }
+      });
 
       setState(() {
         _participantNames = participantNames;
         _rounds = rounds;
+        _roundTimes = roundTimes;
       });
     } catch (e) {
       setState(() {
         _errorMessage = 'Error: $e';
       });
     } finally {
+      // Ensure page position is maintained after loading
       setState(() {
         _isLoading = false;
       });
+      _pageController = PageController(initialPage: _currentPage);
     }
+  }
+
+  void _refreshBracket() async {
+    await _loadBracket();
+    // After loading, set the PageController to the current page
+    setState(() {
+      _pageController = PageController(initialPage: _currentPage);
+    });
   }
 
   @override
@@ -118,79 +142,75 @@ class _FinalStageState extends State<FinalStage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Tournament Bracket'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadBracket, // Call the refresh function
-            tooltip: 'Refresh Bracket',
-          ),
-        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _errorMessage.isNotEmpty
               ? Center(child: Text(_errorMessage))
-              : _buildScrollableBracket(),
-    );
-  }
-
-  Widget _buildScrollableBracket() {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.vertical,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: _rounds.entries.map((entry) {
-            int roundNumber = entry.key;
-            List<dynamic> matches = entry.value;
-
-            return Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  child: Text('Round $roundNumber',
-                      style: const TextStyle(
-                          fontSize: 18, fontWeight: FontWeight.bold)),
-                ),
-                ...matches.map((match) => _buildMatchWidget(match)).toList(),
-              ],
-            );
-          }).toList(),
-        ),
+              : _buildSwipeableRounds(),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _refreshBracket,
+        child: const Icon(Icons.refresh),
       ),
     );
   }
 
+  Widget _buildSwipeableRounds() {
+    return PageView.builder(
+      controller: _pageController,
+      onPageChanged: (index) {
+        setState(() {
+          _currentPage = index; // Track the current page
+        });
+      },
+      itemCount: _rounds.keys.length,
+      itemBuilder: (context, index) {
+        int roundNumber = _rounds.keys.elementAt(index);
+        List<dynamic> matches = _rounds[roundNumber]!;
+        String roundTime = _roundTimes[roundNumber] ?? 'Time TBD';
+
+        return Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Round $roundNumber - $roundTime',
+                style:
+                    const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: ListView(
+                  children:
+                      matches.map((match) => _buildMatchWidget(match)).toList(),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildMatchWidget(dynamic match) {
-    const boxWidth = 400.0;
-    const boxHeight = 120.0; // Increased height to accommodate the score
+    const boxWidth = 150.0;
+    const boxHeight = 80.0;
 
     int? player1Id = match['match']['player1_id'];
     int? player2Id = match['match']['player2_id'];
+    int? winnerId = match['match']['winner_id'];
+
     String team1 = player1Id != null && _participantNames.containsKey(player1Id)
         ? _participantNames[player1Id]!
         : 'TBD';
     String team2 = player2Id != null && _participantNames.containsKey(player2Id)
         ? _participantNames[player2Id]!
         : 'TBD';
-    String winner = match['match']['winner_id'] != null &&
-            _participantNames.containsKey(match['match']['winner_id'])
-        ? 'Winner: ${_participantNames[match['match']['winner_id']]}'
-        : 'Winner TBD';
 
-    // Fetch and format the match's scheduled time
-    String? scheduledTime = match['match']['scheduled_time'];
-    String displayTime = 'Time TBD';
-    if (scheduledTime != null && scheduledTime.isNotEmpty) {
-      DateTime utcTime = DateTime.parse(scheduledTime); // Parse the UTC time
-      DateTime localTime = utcTime.toLocal(); // Convert to local time
-      displayTime = DateFormat('EEE, MMM d – h:mm a')
-          .format(localTime); // Format as "Wed, Nov 12 – 12:00 PM"
-    }
+    bool isTeam1Winner = player1Id == winnerId;
+    bool isTeam2Winner = player2Id == winnerId;
 
-    // Fetch and display scores
     String? scores = match['match']['scores_csv'];
     String displayScore =
         scores != null && scores.isNotEmpty ? scores : 'Score TBD';
@@ -202,21 +222,31 @@ class _FinalStageState extends State<FinalStage> {
         margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
         child: Padding(
           padding: const EdgeInsets.all(8.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('$team1 vs $team2', style: const TextStyle(fontSize: 16)),
-              Text(winner,
-                  style: const TextStyle(fontSize: 14, color: Colors.green)),
-              const SizedBox(height: 4),
-              Text(displayTime,
-                  style: const TextStyle(
-                      fontSize: 12,
-                      color: Colors.blueGrey)), // Display the scheduled time
-              const SizedBox(height: 4),
-              Text(displayScore,
-                  style: const TextStyle(
-                      fontSize: 14, color: Colors.orange)), // Display the score
+              Text(
+                team1,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: isTeam1Winner ? Colors.green : Colors.black,
+                  fontWeight:
+                      isTeam1Winner ? FontWeight.bold : FontWeight.normal,
+                ),
+              ),
+              Text(
+                displayScore,
+                style: const TextStyle(fontSize: 14, color: Colors.orange),
+              ),
+              Text(
+                team2,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: isTeam2Winner ? Colors.green : Colors.black,
+                  fontWeight:
+                      isTeam2Winner ? FontWeight.bold : FontWeight.normal,
+                ),
+              ),
             ],
           ),
         ),
