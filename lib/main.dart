@@ -1,6 +1,7 @@
 // main.dart
 import 'package:flutter/material.dart';
 import 'final_stage.dart';
+import 'search_matches.dart';
 
 void main() {
   runApp(const MyApp());
@@ -43,7 +44,6 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
                 Navigator.push(
@@ -52,6 +52,17 @@ class _MyHomePageState extends State<MyHomePage> {
                 );
               },
               child: const Text('Final Stage'),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const SearchMatchesPage()),
+                );
+              },
+              child: const Text('Search Matches'),
             ),
           ],
         ),
