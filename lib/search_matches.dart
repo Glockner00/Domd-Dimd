@@ -93,7 +93,7 @@ class _SearchMatchesPageState extends State<SearchMatchesPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Search Matches'),
+        title: const Text('Hitta dina matcher'),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -122,7 +122,7 @@ class _SearchMatchesPageState extends State<SearchMatchesPage> {
                         controller: controller,
                         focusNode: focusNode,
                         decoration: const InputDecoration(
-                          labelText: 'Search for a player',
+                          labelText: 'Lagnamn',
                           border: OutlineInputBorder(),
                         ),
                       );

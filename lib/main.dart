@@ -13,12 +13,12 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Challonge brackets',
+      title: 'DimD',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Challonge Brackets Home Page'),
+      home: const MyHomePage(title: 'DimD'),
     );
   }
 }
@@ -51,7 +51,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   MaterialPageRoute(builder: (context) => const FinalStage()),
                 );
               },
-              child: const Text('Final Stage'),
+              child: const Text('Slutspel'),
             ),
             const SizedBox(height: 20),
             ElevatedButton(
@@ -62,7 +62,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       builder: (context) => const SearchMatchesPage()),
                 );
               },
-              child: const Text('Search Matches'),
+              child: const Text('Hitta din match'),
             ),
           ],
         ),

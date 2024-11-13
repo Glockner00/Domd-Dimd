@@ -1,5 +1,4 @@
 // final_stage.dart
-import 'package:challonge_basic/search_matches.dart';
 import 'package:flutter/material.dart';
 import 'challonge_service.dart';
 import 'package:intl/intl.dart';
@@ -91,7 +90,7 @@ class _FinalStageState extends State<FinalStage> {
         // Scroll to the highlighted match with a small offset
         _scrollController.animateTo(
           matchIndex *
-              100.0, // Assuming each match item height is approximately 100. Adjust if needed
+              60.0, // Assuming each match item height is approximately 100. Adjust if needed
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeInOut,
         );
@@ -110,7 +109,7 @@ class _FinalStageState extends State<FinalStage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Tournament Bracket'),
+        title: const Text('Slutspel'),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
