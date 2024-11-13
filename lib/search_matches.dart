@@ -1,6 +1,8 @@
 // search_matches.dart
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'challonge_service.dart';
+import 'final_stage.dart';
 import 'package:intl/intl.dart';
 
 const String tournamentID = "testDomd";
@@ -63,10 +65,15 @@ class _SearchMatchesPageState extends State<SearchMatchesPage> {
           .key;
 
       List<dynamic> matchesForPlayer = [];
-      matches.forEach((_, roundMatches) {
-        matchesForPlayer.addAll(roundMatches.where((match) =>
-            match['match']['player1_id'] == playerId ||
-            match['match']['player2_id'] == playerId));
+      matches.forEach((roundNumber, roundMatches) {
+        for (var match in roundMatches) {
+          if (match['match']['player1_id'] == playerId ||
+              match['match']['player2_id'] == playerId) {
+            // Store the round number with each match for navigation
+            match['match']['round_number'] = roundNumber;
+            matchesForPlayer.add(match);
+          }
+        }
       });
 
       setState(() {
@@ -136,7 +143,21 @@ class _SearchMatchesPageState extends State<SearchMatchesPage> {
                     itemCount: _matchesForPlayer.length,
                     itemBuilder: (context, index) {
                       final match = _matchesForPlayer[index];
-                      return _buildMatchWidget(match);
+                      return GestureDetector(
+                        onTap: () {
+                          // Navigate to FinalStage and pass the round and match ID
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => FinalStage(
+                                initialRound: match['match']['round_number'],
+                                highlightMatchId: match['match']['id'],
+                              ),
+                            ),
+                          );
+                        },
+                        child: _buildMatchWidget(match),
+                      );
                     },
                   ),
                 ),
@@ -148,7 +169,6 @@ class _SearchMatchesPageState extends State<SearchMatchesPage> {
   Widget _buildMatchWidget(dynamic match) {
     int? player1Id = match['match']['player1_id'];
     int? player2Id = match['match']['player2_id'];
-
     String team1 = player1Id != null && _participantNames.containsKey(player1Id)
         ? _participantNames[player1Id]!
         : 'TBD';
@@ -164,16 +184,21 @@ class _SearchMatchesPageState extends State<SearchMatchesPage> {
         : 'Time TBD';
 
     String? scores = match['match']['scores_csv'];
-    String displayScore = scores != null && scores.isNotEmpty ? scores : 'TBD';
+    String displayScore =
+        scores != null && scores.isNotEmpty ? scores : 'Score TBD';
 
-    return ListTile(
-      title: Text('$team1 vs $team2'),
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Time: $displayTime'),
-          Text('Score: $displayScore'),
-        ],
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('$team1 vs $team2'),
+            Text('Time: $displayTime'),
+            Text('Score: $displayScore'),
+          ],
+        ),
       ),
     );
   }

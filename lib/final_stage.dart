@@ -1,4 +1,5 @@
 // final_stage.dart
+import 'package:challonge_basic/search_matches.dart';
 import 'package:flutter/material.dart';
 import 'challonge_service.dart';
 import 'package:intl/intl.dart';
@@ -6,7 +7,14 @@ import 'package:intl/intl.dart';
 const String tournamentID = "testDomd";
 
 class FinalStage extends StatefulWidget {
-  const FinalStage({super.key});
+  final int initialRound;
+  final int highlightMatchId;
+
+  const FinalStage({
+    super.key,
+    this.initialRound = 0,
+    this.highlightMatchId = -1,
+  });
 
   @override
   State<FinalStage> createState() => _FinalStageState();
@@ -25,6 +33,7 @@ class _FinalStageState extends State<FinalStage> {
   @override
   void initState() {
     super.initState();
+    _currentPage = widget.initialRound - 1;
     _pageController = PageController(initialPage: _currentPage);
     _loadBracket();
   }
@@ -100,7 +109,7 @@ class _FinalStageState extends State<FinalStage> {
       controller: _pageController,
       onPageChanged: (index) {
         setState(() {
-          _currentPage = index;
+          _currentPage = index; // Track the current page
         });
       },
       itemCount: _rounds.keys.length,
@@ -122,8 +131,9 @@ class _FinalStageState extends State<FinalStage> {
               const SizedBox(height: 16),
               Expanded(
                 child: ListView(
-                  children:
-                      matches.map((match) => _buildMatchWidget(match)).toList(),
+                  children: matches
+                      .map((match) => _buildMatchWidget(match, roundNumber))
+                      .toList(),
                 ),
               ),
             ],
@@ -133,7 +143,7 @@ class _FinalStageState extends State<FinalStage> {
     );
   }
 
-  Widget _buildMatchWidget(dynamic match) {
+  Widget _buildMatchWidget(dynamic match, int roundNumber) {
     const boxWidth = 150.0;
     const boxHeight = 80.0;
 
@@ -155,10 +165,14 @@ class _FinalStageState extends State<FinalStage> {
     String displayScore =
         scores != null && scores.isNotEmpty ? scores : 'Score TBD';
 
+    // Highlight the selected match if its ID matches highlightMatchId
+    bool isHighlighted = match['match']['id'] == widget.highlightMatchId;
+
     return SizedBox(
       width: boxWidth,
       height: boxHeight,
       child: Card(
+        color: isHighlighted ? Colors.grey[300] : Colors.white,
         margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
         child: Padding(
           padding: const EdgeInsets.all(8.0),
