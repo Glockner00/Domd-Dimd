@@ -1,6 +1,5 @@
 // search_matches.dart
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'challonge_service.dart';
 import 'final_stage.dart';
 import 'package:intl/intl.dart';
@@ -94,6 +93,12 @@ class _SearchMatchesPageState extends State<SearchMatchesPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Hitta dina matcher'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
